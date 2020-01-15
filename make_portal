@@ -1,0 +1,50 @@
+#FORTRAN COMPILER
+module load intel
+CC=ifort
+
+#FLAGS for OpemMP and LAPACK LIBRARIES
+LFLAGS='-fopenmp -lmkl_lapack'
+
+#LOCATION OF WIGXJPF LIBRARY
+WIGFLAGS='-I/c3se/users/lankhaar/Hebbe/wigner/inc -L/c3se/users/lankhaar/Hebbe/wigner/lib -lwigxjpf -lm -I/c3se/users/lankhaar/Hebbe/wigner/mod' 
+
+#SOME COMPILATION FLAGS
+CFLAGS='-g 
+	-O1 
+	-traceback 
+	-debug extended 
+	-heap-arrays 
+	-mcmodel=medium'
+
+
+#LOCATION OF MAIN PORTAL SUBROUTINES
+MPROG='/c3se/users/lankhaar/Hebbe/PORTAL/src/main_para.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/unique.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/legendre_rule.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/inverse_rt.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/raytrace.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/miscellaneous.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/eat_lime.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/pop_eqs.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/em_coefs.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/main_sub.f90'
+
+#LOCATION OF RAY-TRACING PORTAL SUBROUTINES
+FPROG='/c3se/users/lankhaar/Hebbe/PORTAL/src/para_finish.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/unique.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/legendre_rule.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/raytrace.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/inverse_rt.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/miscellaneous.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/eat_lime.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/pop_eqs.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/em_coefs.f90
+	/c3se/users/lankhaar/Hebbe/PORTAL/src/main_sub.f90'
+
+#LOCATION OF OUTPUT FILES
+MPS=/c3se/users/lankhaar/Hebbe/PORTAL/bin/main_portal.x
+FPS=/c3se/users/lankhaar/Hebbe/PORTAL/bin/finish_portal.x
+
+$CC $MPROG $LFLAGS $WIGFLAGS $CFLAGS -o $MPS 
+$CC $FPROG $LFLAGS $WIGFLAGS $CFLAGS -o $FPS 
+ 
