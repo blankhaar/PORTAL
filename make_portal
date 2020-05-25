@@ -6,7 +6,9 @@ CC=ifort
 LFLAGS='-fopenmp -lmkl_lapack'
 
 #LOCATION OF WIGXJPF LIBRARY
-WIGFLAGS='-I/c3se/users/lankhaar/Hebbe/wigner/inc -L/c3se/users/lankhaar/Hebbe/wigner/lib -lwigxjpf -lm -I/c3se/users/lankhaar/Hebbe/wigner/mod' 
+WIGFLAGS='-I/cephyr/users/lankhaar/Vera/wigner/inc -L/cephyr/users/lankhaar/Vera/wigner/lib -lwigxjpf -lm -I/cephyr/users/lankhaar/Vera/wigner/mod' 
+
+LFITS="-L /c3se/users/lankhaar/Hebbe/fits/cfits/lib -lcfitsio"
 
 #SOME COMPILATION FLAGS
 CFLAGS='-g 
@@ -18,33 +20,42 @@ CFLAGS='-g
 
 
 #LOCATION OF MAIN PORTAL SUBROUTINES
-MPROG='/c3se/users/lankhaar/Hebbe/PORTAL/src/main_para.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/unique.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/legendre_rule.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/inverse_rt.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/raytrace.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/miscellaneous.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/eat_lime.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/pop_eqs.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/em_coefs.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/main_sub.f90'
+MPROG=' /cephyr/users/lankhaar/Vera/PORTAL/src/main_para.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/unique.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/legendre_rule.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/inverse_rt.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/raytrace.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/miscellaneous.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/eat_lime.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/pop_eqs.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/em_coefs.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/main_sub.f90'
 
 #LOCATION OF RAY-TRACING PORTAL SUBROUTINES
-FPROG='/c3se/users/lankhaar/Hebbe/PORTAL/src/para_finish.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/unique.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/legendre_rule.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/raytrace.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/inverse_rt.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/miscellaneous.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/eat_lime.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/pop_eqs.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/em_coefs.f90
-	/c3se/users/lankhaar/Hebbe/PORTAL/src/main_sub.f90'
+FPROG=' /cephyr/users/lankhaar/Vera/PORTAL/src/para_finish.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/unique.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/legendre_rule.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/raytrace.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/inverse_rt.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/miscellaneous.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/eat_lime.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/pop_eqs.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/em_coefs.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/fits_writing.f90
+	/cephyr/users/lankhaar/Vera/PORTAL/src/main_sub.f90'
 
 #LOCATION OF OUTPUT FILES
-MPS=/c3se/users/lankhaar/Hebbe/PORTAL/bin/main_portal.x
-FPS=/c3se/users/lankhaar/Hebbe/PORTAL/bin/finish_portal.x
+MPS=/cephyr/users/lankhaar/Vera/PORTAL/bin/main_portal.x
+FPS=/cephyr/users/lankhaar/Vera/PORTAL/bin/finish_portal.x
 
 $CC $MPROG $LFLAGS $WIGFLAGS $CFLAGS -o $MPS 
-$CC $FPROG $LFLAGS $WIGFLAGS $CFLAGS -o $FPS 
+$CC $FPROG $LFLAGS $WIGFLAGS $CFLAGS $LFITS -o $FPS 
+
+#LOCATION OF OUTPUT FILES ON THE CLUSTER
+MPS2=/priv/c3-astro-data1//PORTAL/bin/main_portal.x
+FPS2=/priv/c3-astro-data1//PORTAL/bin/finish_portal.x
+
+cp $MPS $MPS2 
+cp $FPS $FPS2
+
  
