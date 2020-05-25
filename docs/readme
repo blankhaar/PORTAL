@@ -1,7 +1,7 @@
 INTRODUCTION AND CODE SUMMARY 
 Subroutines for a lime-extension that will simulates polarized line radiative transfer.
 Polarization of the molecular states is assumed to come only from anisotropy in the total 
-intensity. An assumption that lends its veracity from the generally weakly polarized molecular
+intensity. An assumption that lends its validity from the generally weakly polarized molecular
 emission lines that are observed. The low fractional polarization lacks the power to polarize
 the molecular states.
 
@@ -20,8 +20,8 @@ The inward ray-tracing of the direction sampling of the radiation field yields t
 J^0_0 (isotropic) and the J^2_0 (anisotropic) parts of local radiation field, and are 
 computed for every transition relevant to the molecule of interest. These numbers are 
 inserted in the statistical equilibrium equations (SEE) for a molecule in the 
-non-coherence case (strong magnetic field). The SEE are
-set up as given in Eq. (7.17-18) in L&L04. We note that we use the
+non-coherence case (strong magnetic field). The SEE are set up as given in 
+Eq. (7.17-18) in L&L04. We note that we use the
 extension for collisions that are given in Eq. (7.101) in L&L04. We point out 
 that for the collisional rates, we only have the isotropic rates available. Higher 
 order tensorial expansion elements should also be calculable from quantum dynamical 
@@ -35,7 +35,7 @@ that we compute N polarized populations, we
 have N separate, but interdependent equations, that can be expressed in matrix-form as
 0 = A*p
 where p is a vector of polarized densities and A is an NxN matrix with elements determined
-by the SEE. Just as in the Hazel code (Ramos 2008), we replace the first line of A (A(1,:))
+by the SEE. We replace the first line of A (A(1,:))
 with the normalization requirement in matrix form:
 \sum_i sqrt([j_i])\rho_0^0 (j_i) = 1.    L-84 Eq.(56)
 With that constraint on the populations, the matrix equations become
@@ -50,7 +50,7 @@ for a particular angle theta between the local magnetic field and the ray-tracin
 direction. With these coefficients obtained, we can ray-trace the polarized radiation
 through the simulation.   
 
-The main program is divided up in two executables. The first executable is a program that 
+The main program is divided in two executables. The first executable is a program that 
 performs the inward ray-tracing and solves the polarized SEEs for each node in the 
 simulation. It outputs the polarized populations (k=0 and k=2) and has the option to output
 the radiative/collisional rates as a check. The second executable uses the polarized 
@@ -67,13 +67,14 @@ data file on the dust-opacity.
 INSTALLING PORTAL
 The script 'make_portal' includes the installation directions to compile the PORTAL code.
 We make use of the LAPACK libraires (http://www.netlib.org/lapack/), OpenMP libraires 
-(https://www.openmp.org/) and the WIGXJPF library (http://fy.chalmers.se/subatom/wigxjpf/). 
+(https://www.openmp.org/), the WIGXJPF library (http://fy.chalmers.se/subatom/wigxjpf/) 
+and the CFITS package (https://heasarc.gsfc.nasa.gov/fitsio/). 
 These libraries have to be installed before compiling PORTAL. 
 
 The installation of PORTAL yields two executables: "main_portal.x" and "finish_portal.x". 
 PORTAL is designed so that the polarized populations are saved after a "main_portal.x"
 calculation. Subsequently, one has the liberty to ray-trace the solution in any inclination
-angle, transition, or velocity-channel one so desires. Ray-tracing step is done with the 
+angle, transition, or velocity-channel one so desires. The ray-tracing step is done with the 
 "finish_portal.x" executable.
  
 RUNNING PORTAL
@@ -87,6 +88,7 @@ input_main:
 <empty line>
 star_mode T_star R_star X_star Y_star Z_star
 nth nph nvel
+dust_to_gas 
 b_rad b_tor b_pol b_dip
 kmax extra_info 
 max_ne_temp n_depth
@@ -97,6 +99,7 @@ star_mode		-- if 1, do ray-tracing with an internal (or external) star
 T_star, R_star		-- temperature and radius star 
 X_star Y_star Z_star	-- position star
 nth nph nvel		-- inward ray-tracing parameters (st: nph=nth=32 nvel=10) 
+dust_to_gas		-- dust to gas mass ratio
 b_rad b_tor b_pol b_dip -- magnetic field character of simulation ex: b_rad=1, rest 0, 
 			   fully radial mag field. If b_dip not 0, then dipole magnetic field
 kmax 			-- k-truncation (st: kmax=6)
@@ -113,23 +116,43 @@ ninc
 th_inc_1 th_inc_2 ... th_inc_ninc
 ph_inc_1 ph_inc_2 ... ph_inc_ninc
 <empty line>
+nvel dvel v0
+<empty line>
 star_mode T_star R_star X_star Y_star Z_star
+dust_to_gas
 b_rad b_tor b_pol b_dip
 kmax extra_info   
-pix_mod im_pix im_size s_d
+pix_mod im_pix im_size
+fits s_d 
 max_ne_temp n_depth_rt
 <empty line>
 EOF
+
+ntrans			-- number of transitions
+li_j			-- level number (see LAMDA file) of the i=1 (upper) or 2 (lower) state
+			   of the j'th transition that needs to be ray-traced
+ninc			-- number of inclinations to be ray traced
+th_inc_i		-- theta_inc_i inclination of i'th ray-tracing
+ph_inc_i		-- phi_inc_i azimuth of the i'th ray-tracing
+nvel			-- number of velocity channels to be ray-traced (nvel_tot = 2*nvel+1)
+dvel			-- velocity-separation between adjacent velocity channels (m/s) 
+v0			-- velocity of central channel
+fits			-- if 1 then output in fits files
+s_d			-- source distance (in meters)
+n_depth_rt		-- parameter-length parameters -- (st. n_depth_rt=10000)
 
 2) location of the output map
 
 3) population.pop file
 population.pop file has to have the following structure:
+first line
+!x y z vx vy vz nH2 Tkin Tdust Doppler_b mol_ab gasiidust conv_flag pops_1 pops_2 ... pops_N 
+following lines are the cell-variables:
 x y z vx vy vz nH2 Tkin Tdust Doppler_b mol_ab gasiidust conv_flag pops_1 pops_2 ... pops_N 
 
 4) grid.vtk
 
-5) molecular_lamda_file
+5) lamda_file
 
 6) dust_file (standard "jena_thin_e6.tab")
 
