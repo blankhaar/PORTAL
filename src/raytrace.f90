@@ -193,6 +193,7 @@ double precision eta_I,eta_Q,eps_I,eps_Q,tau,cnu
 double precision I_dust,Q_dust_in,Q_dust_out,U_dust_in,U_dust_out
 double precision sig_dust_0,sig_dust_2,mu,mu2,sI,sQ,I_bb,e_dust
 double precision tau_dust,tau_dust_tot,alpha,Q_dust,U_dust
+double precision phi,q_phi_rot,u_phi_rot 
 
 double precision, dimension(node_count) :: bb_list,vel_list,b_list,dust_dens
 double precision, dimension(3,node_count) :: bvec_list
@@ -240,10 +241,10 @@ do i = 1,node_count-1
 !rotate Q and U parameters from the global axis system 
 !to the node axis system 
   call rot_stokes(Q_in,U_in,Q_out,U_out,bvec_list(:,i))
-  call rot_stokes(Q_dust_in,U_dust_in,Q_dust_out,U_dust_out,bvec_list(:,i))
+!  call rot_stokes(Q_dust_in,U_dust_in,Q_dust_out,U_dust_out,bvec_list(:,i))
 
   mu = bvec_list(3,i)
-  mu2 = mu * mu 
+  mu2 = 1.d0 - mu * mu          !gamma = angle of B with plane of the sky  
 
 !we have already computed the propagation parameters
   eta_I = cnu * v_corr * pol_rayt_list(1,i) 
@@ -271,14 +272,20 @@ do i = 1,node_count-1
     e_dust = dexp(-tau_dust)
     
     sI = 0.5d0 * alpha * (mu2 - 2.d0 / 3.d0 )
-    sQ = I_bb * alpha * mu2
+    sQ = alpha * mu2
      
     I_dust = I_dust*e_dust + I_bb*(1-e_dust)
     sig_dust_0 = sig_dust_0*e_dust + I_bb*(1-e_dust)
-    sig_dust_2 = sig_dust_0*e_dust + sI*I_bb*(1-e_dust)
-    
-    Q_dust_out = Q_dust_out*e_dust + sQ*I_bb*(1-e_dust)
-    U_dust_out = U_dust_out*e_dust 
+    sig_dust_2 = sig_dust_2*e_dust + sI*I_bb*(1-e_dust)
+
+    phi = dacos(bvec_list(2,i)/dsqrt(bvec_list(1,i)**2.d0 + bvec_list(2,i)**2.d0))
+    if (bvec_list(1,i).lt.0.d0) phi = -phi
+  
+    q_phi_rot = dcos(2.d0 * phi)
+    u_phi_rot = dsin(2.d0 * phi)
+ 
+    Q_dust_in = Q_dust_in*e_dust + sQ*I_bb*(1-e_dust) * q_phi_rot
+    U_dust_in = U_dust_in*e_dust + sQ*I_bb*(1-e_dust) * u_phi_rot
     tau_dust_tot = tau_dust_tot + tau_dust
   endif
 
@@ -286,7 +293,7 @@ do i = 1,node_count-1
 !rotate the Q and U parameters from the node axis system
 !to the global axis system
   call rot_stokes_back(Q_out,U_out,Q_in,U_in,bvec_list(:,i))
-  call rot_stokes_back(Q_dust_out,U_dust_out,Q_dust_in,U_dust_in,bvec_list(:,i))
+!  call rot_stokes_back(Q_dust_out,U_dust_out,Q_dust_in,U_dust_in,bvec_list(:,i))
 
 
 end do
@@ -298,11 +305,20 @@ I_out = I_out - I_corr
 Q_out = Q_in
 U_out = U_in
 
-Q_dust = I_dust * Q_dust_in/(sig_dust_0 - sig_dust_2)
-U_dust = I_dust * U_dust_in/(sig_dust_0 - sig_dust_2)
 I_dust = I_dust - I_corr
-tau_dust = tau_dust_tot
+if (I_dust.eq.0.d0) then
+  Q_dust = 0.d0
+  U_dust = 0.d0
+  tau_dust = 0.d0
+else 
+  Q_dust = I_dust * Q_dust_in/(sig_dust_0 - sig_dust_2)
+  U_dust = I_dust * U_dust_in/(sig_dust_0 - sig_dust_2)
+  tau_dust = tau_dust_tot
+endif
 !convert to temperature units?
+
+!write(*,*)I_out,Q_out,U_out
+!write(*,*)I_dust,Q_dust,U_dust
 
 end subroutine
 

@@ -16,7 +16,7 @@ character(len=100) :: in_pol_pop
 integer node_num,del_num,e_num,r_num,c_num,c_temp
 integer i,j,k,l,i1,maxne,node,node_count,nth,nph,g1,g2,n_trans
 integer c_dim,kmax,im_pix,bulk_node_num,pix
-integer verbose_mode,star_mod,k_mu,k_phi 
+integer verbose_mode,star_mod,k_mu,k_phi,fits 
 integer nlevels,nincs,nvel,n_rt,c_rt,c_par
 integer k1,k2,k3,f1,f2,f3,f4,extra_info,max_ne_temp,n_depth_rt
 
@@ -38,7 +38,7 @@ integer, allocatable, dimension(:) :: all_node_count
 double precision I_to_T,r1,r2,r3,dx,tx,R_star,T_star,x_dip
 double precision a_to_b,start,finish,I_bb,dust_ii_gas
 double precision th,ph,im_size,nu0,rat,dvel,Q_in,U_in
-double precision dOm,th_star,ph_star,mass_mol,x1,x2,x3
+double precision dOm,th_star,ph_star,mass_mol,x1,x2,x3,distance,ang_scale
 double precision alpha,pix0,kasta_a,kasta_b,kasta_c,kasta_d,v0
 double precision, parameter :: pi = dacos(-1.d0)
 
@@ -117,6 +117,7 @@ read(101,*)star_mod,T_star,R_star,XYZ_star(:)
 read(101,*)x1,x2,x3,x_dip
 read(101,*)kmax,extra_info
 read(101,*)pix,im_pix,im_size
+read(101,*)fits,distance
 read(101,*)max_ne_temp,n_depth_rt
 close(unit=101)
 
@@ -184,6 +185,7 @@ do i = 1,nlevels
 end do
 
 R_star = R_star / tx
+ang_scale = -180.d0 * dasin(2.d0 * im_size * tx / distance) / pi 
 
 allocate(del_ne(node_num,maxne))
 del_ne(:,:) = 0
@@ -242,7 +244,13 @@ if (pix.eq.0) then
   allocate(all_Q(bulk_node_num,nlevels,nincs,-nvel:nvel))
   allocate(all_U(bulk_node_num,nlevels,nincs,-nvel:nvel))
   allocate(all_TAU(bulk_node_num,nlevels,nincs,-nvel:nvel))
-  
+ 
+  allocate(dust_I(bulk_node_num,nlevels,nincs,-nvel:nvel))
+  allocate(dust_Q(bulk_node_num,nlevels,nincs,-nvel:nvel))
+  allocate(dust_U(bulk_node_num,nlevels,nincs,-nvel:nvel))
+  allocate(dust_TAU(bulk_node_num,nlevels,nincs,-nvel:nvel))
+
+ 
   Q_in = 0.d0
   U_in = 0.d0
   
@@ -308,7 +316,8 @@ if (pix.eq.0) then
   &temp_all(2,all_depth_list(node,1,1:all_node_count(node))),&
   &vel_inc(3,all_depth_list(node,1,1:all_node_count(node)))&
   &,all_depth_list(node,2,1:all_node_count(node)),tx*dx,nu0_all(j),all_I_in(j,node),all_I(node,j,i,k),&
-  &all_Q(node,j,i,k),all_U(node,j,i,k),all_TAU(node,j,i,k),kasta_a,kasta_b,kasta_c,kasta_d)
+  &all_Q(node,j,i,k),all_U(node,j,i,k),all_TAU(node,j,i,k),&
+  &dust_I(node,j,i,k),dust_Q(node,j,i,k),dust_U(node,j,i,k),dust_TAU(node,j,i,k))
         end do
       end do
     end do
@@ -318,7 +327,7 @@ if (pix.eq.0) then
   
   f1 = 11
   do i = 1,nlevels
-    I_to_T = 2.045D40 / (nu0_all(i)*nu0_all(i))
+    I_to_T = 3.255D39 / (nu0_all(i)*nu0_all(i))
 
     do j = 1,nincs
       do k = -nvel,nvel
@@ -414,6 +423,7 @@ else
     do node = 1,n_rt
       do j = 1,nlevels
         do k = -nvel,nvel
+!          write(*,*)node
           call ray_in_raytrace(vel_out(k),all_node_count(node),&
   &all_pol_rayt(j,:,all_depth_list(node,1,1:all_node_count(node))),b_all(all_depth_list(node,1,1:all_node_count(node)))&
   &,bvec_inc(:,all_depth_list(node,1,1:all_node_count(node))),&
@@ -423,6 +433,7 @@ else
   &,all_depth_list(node,2,1:all_node_count(node)),tx*dx,nu0_all(j),all_I_in(j,node),all_I(node,j,i,k),&
   &all_Q(node,j,i,k),all_U(node,j,i,k),all_TAU(node,j,i,k),&
   &dust_I(node,j,i,k),dust_Q(node,j,i,k),dust_U(node,j,i,k),dust_TAU(node,j,i,k))
+!          write(*,*)dust_I(node,j,i,k),dust_TAU(node,j,i,k)
         end do
       end do
     end do
@@ -440,7 +451,7 @@ else
   f4 = 401
   do i = 1,nlevels
   !  freq = nu0_all(i) 
-    I_to_T = 2.045D40 / (nu0_all(i)*nu0_all(i))
+    I_to_T = 3.255D39 / (nu0_all(i)*nu0_all(i))
     do j = 1,nincs
   
       array_i(:,:,:) =0.d0
@@ -464,52 +475,68 @@ else
         end do
       end do
   !    stop 
-  
-      write (file_I,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-im_i.fits'
-      write (file_Q,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-im_q.fits'
-      write (file_U,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-im_u.fits'
-      write (file_TAU,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-im_tau.fits'
-  
-      file_I = trim(output_map) // trim(file_I)
-      file_Q = trim(output_map) // trim(file_Q)
-      file_U = trim(output_map) // trim(file_U)
-      file_TAU = trim(output_map) // trim(file_TAU)
-
-      do k3 = 1,2*nvel+1
-  
-        write (file_I,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-im_i.dat'
-        write (file_Q,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-im_q.dat'
-        write (file_U,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-im_u.dat'
-        write (file_TAU,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-im_tau.dat'
-  
+      if (fits.eq.1) then  
+        write (file_I,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-im_i.fits'
+        write (file_Q,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-im_q.fits'
+        write (file_U,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-im_u.fits'
+        write (file_TAU,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-im_tau.fits'
+    
         file_I = trim(output_map) // trim(file_I)
         file_Q = trim(output_map) // trim(file_Q)
         file_U = trim(output_map) // trim(file_U)
         file_TAU = trim(output_map) // trim(file_TAU)
-  
-        f1 = f1 + 1
-        f2 = f2 + 1
-        f3 = f3 + 1
-        f4 = f4 + 1
-  
-        open(unit=f1,file=file_I,recl=8824)
-        open(unit=f2,file=file_Q,recl=8824)
-        open(unit=f3,file=file_U,recl=8824)
-        open(unit=f4,file=file_TAU,recl=8824)
-  
-        do k1 = 1,2*im_pix+1
-          write(f1,*)array_i(k1,:,k3)
-          write(f2,*)array_q(k1,:,k3)
-          write(f3,*)array_u(k1,:,k3)
-          write(f4,*)array_tau(k1,:,k3)
+
+        call writeimage(real(array_i),int(2*nvel+1),int(2*im_pix+1),file_I,real(nu0_all(i)),&
+& real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(0.d0),real(0.d0),real(0.d0))
+
+        call writeimage(real(array_q),int(2*nvel+1),int(2*im_pix+1),file_Q,real(nu0_all(i)),&
+& real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(0.d0),real(0.d0),real(0.d0))
+
+        call writeimage(real(array_u),int(2*nvel+1),int(2*im_pix+1),file_U,real(nu0_all(i)),&
+& real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(0.d0),real(0.d0),real(0.d0))
+
+        call writeimage(real(array_tau),int(2*nvel+1),int(2*im_pix+1),file_TAU,real(nu0_all(i)),&
+& real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(0.d0),real(0.d0),real(0.d0))
+      else
+        do k3 = 1,2*nvel+1
+    
+          write (file_I,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-im_i.dat'
+          write (file_Q,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-im_q.dat'
+          write (file_U,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-im_u.dat'
+          write (file_TAU,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-im_tau.dat'
+    
+          file_I = trim(output_map) // trim(file_I)
+          file_Q = trim(output_map) // trim(file_Q)
+          file_U = trim(output_map) // trim(file_U)
+          file_TAU = trim(output_map) // trim(file_TAU)
+    
+          f1 = f1 + 1
+          f2 = f2 + 1
+          f3 = f3 + 1
+          f4 = f4 + 1
+    
+          open(unit=f1,file=file_I,recl=8824)
+          open(unit=f2,file=file_Q,recl=8824)
+          open(unit=f3,file=file_U,recl=8824)
+          open(unit=f4,file=file_TAU,recl=8824)
+    
+          do k1 = 1,2*im_pix+1
+            write(f1,*)array_i(k1,:,k3)
+            write(f2,*)array_q(k1,:,k3)
+            write(f3,*)array_u(k1,:,k3)
+            write(f4,*)array_tau(k1,:,k3)
+          end do
+    
+          close(f1)
+          close(f2)
+          close(f3)
+          close(f4)
         end do
-  
-        close(f1)
-        close(f2)
-        close(f3)
-        close(f4)
-      end do
-  
+      endif  
     end do
   end do
   
@@ -526,10 +553,10 @@ else
   f1 = 501
   f2 = 601
   f3 = 701
-  f4 = 701
+  f4 = 801
   do i = 1,nlevels
   !  freq = nu0_all(i) 
-    I_to_T = 2.045D40 / (nu0_all(i)*nu0_all(i))
+    I_to_T = 3.255D39 / (nu0_all(i)*nu0_all(i))
 
     do j = 1,nincs
   
@@ -552,42 +579,70 @@ else
           end do
         end do
       end do
-  
-      do k3 = 1,2*nvel+1
-  
-        write (file_I,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-dust_i.dat'
-        write (file_Q,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-dust_q.dat'
-        write (file_U,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-dust_u.dat'
-        write (file_TAU,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-dust_tau.dat'
-  
+
+      if (fits.eq.1) then
+        write (file_I,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-dust_i.fits'
+        write (file_Q,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-dust_q.fits'
+        write (file_U,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-dust_u.fits'
+        write (file_TAU,fmt='(a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-dust_tau.fits'
+
         file_I = trim(output_map) // trim(file_I)
         file_Q = trim(output_map) // trim(file_Q)
         file_U = trim(output_map) // trim(file_U)
         file_TAU = trim(output_map) // trim(file_TAU)
+
+        call writeimage(real(array_i(:,:,nvel+1)),int(1),int(2*im_pix+1),file_I,real(nu0_all(i)),&
+&real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(0.d0),real(0.d0),real(0.d0))
+
+        call writeimage(real(array_q(:,:,nvel+1)),int(1),int(2*im_pix+1),file_Q,real(nu0_all(i)),&
+&real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(0.d0),real(0.d0),real(0.d0))
+
+        call writeimage(real(array_u(:,:,nvel+1)),int(1),int(2*im_pix+1),file_U,real(nu0_all(i)),&
+&real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(0.d0),real(0.d0),real(0.d0))
+
+        call writeimage(real(array_tau(:,:,nvel+1)),int(1),int(2*im_pix+1),file_TAU,real(nu0_all(i)),&
+&real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(0.d0),real(0.d0),real(0.d0))
+      else
   
-        f1 = f1 + 1
-        f2 = f2 + 1
-        f3 = f3 + 1
-        f4 = f4 + 1
-  
-        open(unit=f1,file=file_I,recl=8824)
-        open(unit=f2,file=file_Q,recl=8824)
-        open(unit=f3,file=file_U,recl=8824)
-        open(unit=f4,file=file_TAU,recl=8824)
-  
-        do k1 = 1,2*im_pix+1
-          write(f1,*)array_i(k1,:,k3)
-          write(f2,*)array_q(k1,:,k3)
-          write(f3,*)array_u(k1,:,k3)
-          write(f4,*)array_tau(k1,:,k3)
+        do k3 = 1,2*nvel+1
+    
+          write (file_I,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-dust_i.dat'
+          write (file_Q,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-dust_q.dat'
+          write (file_U,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-dust_u.dat'
+          write (file_TAU,fmt='(a,i2.2,a,i2.2,a,i2.2,a)')'/inc',j,'-trans',i,'-vel',k3,'-dust_tau.dat'
+    
+          file_I = trim(output_map) // trim(file_I)
+          file_Q = trim(output_map) // trim(file_Q)
+          file_U = trim(output_map) // trim(file_U)
+          file_TAU = trim(output_map) // trim(file_TAU)
+    
+          f1 = f1 + 1
+          f2 = f2 + 1
+          f3 = f3 + 1
+          f4 = f4 + 1
+    
+          open(unit=f1,file=file_I,recl=8824)
+          open(unit=f2,file=file_Q,recl=8824)
+          open(unit=f3,file=file_U,recl=8824)
+          open(unit=f4,file=file_TAU,recl=8824)
+    
+          do k1 = 1,2*im_pix+1
+            write(f1,*)array_i(k1,:,k3)
+            write(f2,*)array_q(k1,:,k3)
+            write(f3,*)array_u(k1,:,k3)
+            write(f4,*)array_tau(k1,:,k3)
+          end do
+    
+          close(f1)
+          close(f2)
+          close(f3)
+          close(f4)
         end do
-  
-        close(f1)
-        close(f2)
-        close(f3)
-        close(f4)
-      end do
-  
+      endif  
     end do
   end do
 endif

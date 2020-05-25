@@ -497,7 +497,7 @@ chi(:) = chi(:) / norm2(chi)
 !chi = \    ---- alpha = -45
 
 alpha = dacos(chi(2))
-if (chi(1).lt.0) alpha = -alpha
+if (chi(1).lt.0.d0) alpha = -alpha
 
 Qnode = Q * dcos(2.d0*alpha) + U * dsin(2.d0*alpha)
 Unode = U * dcos(2.d0*alpha) - Q * dsin(2.d0*alpha)
@@ -1262,4 +1262,3 @@ endif
 
 end subroutine
 
- 

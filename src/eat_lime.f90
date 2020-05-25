@@ -205,7 +205,7 @@ close(12)
 dust_ii_vec(:) = 0.d0
 
 open(unit=13,file=in_pop)
-!read(13,*)
+read(13,*)                      !this was commented once
 i = 0
 
 100 CONTINUE
@@ -217,6 +217,9 @@ GO TO 100
 200 CONTINUE
 
 close(13)
+
+!write(*,*)vel_all(:,1)
+!write(*,*)lev_p(1,1)
 
 bulk_node_num = i
 
