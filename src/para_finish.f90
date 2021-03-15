@@ -185,7 +185,7 @@ do i = 1,nlevels
 end do
 
 R_star = R_star / tx
-ang_scale = -180.d0 * dasin(2.d0 * im_size * tx / distance) / pi 
+ang_scale = -180.d0 * dasin(2.d0 * im_size * tx / distance) / (pi * (im_pix*2+1))  
 
 allocate(del_ne(node_num,maxne))
 del_ne(:,:) = 0
@@ -203,9 +203,12 @@ dx = 1E-4
 allocate(bvec_all(3,node_num))
 allocate(bvec_inc(3,node_num))
 !general magnetic field structure
+!write(*,*)x_dip
 if (x_dip.ne.0.d0)  then
+!   write(*,*)'dip'
   call dipole_magfield(node_num,XYZ,x1,x2,x3,bvec_all)
 else
+!  write(*,*)'global'
   call global_magfield(node_num,XYZ,x1,x2,x3,bvec_all)
 endif
 
@@ -377,9 +380,14 @@ else
 
 
   do i = 1,nincs
+!    write(*,*)i
     call rotate_all_save(node_num,th_inc(i),ph_az(i),vel_all,bvec_all,XYZ,XYZ_star,&
   &vel_inc,bvec_inc,XYZ_inc,XYZ_star_inc) !also rotated star-coordinates required here
-  
+!    do node = 1,node_num
+!      write(*,fmt='(e,e,e,e,e,e)')tx*XYZ_inc(:,node),bvec_inc(:,node)
+!    end do
+!    write(*,*)
+ 
     if (allocated(all_depth_list)) deallocate(all_depth_list)
     if (allocated(all_node_count)) deallocate(all_node_count)
     if (allocated(all_I_in)) deallocate(all_I_in)
@@ -487,19 +495,19 @@ else
         file_TAU = trim(output_map) // trim(file_TAU)
 
         call writeimage(real(array_i),int(2*nvel+1),int(2*im_pix+1),file_I,real(nu0_all(i)),&
-& real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(ang_scale),real(1.d0*(im_pix+1)),real(-1.d0*ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
 & real(0.d0),real(0.d0),real(0.d0))
 
         call writeimage(real(array_q),int(2*nvel+1),int(2*im_pix+1),file_Q,real(nu0_all(i)),&
-& real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(ang_scale),real(1.d0*(im_pix+1)),real(-1.d0*ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
 & real(0.d0),real(0.d0),real(0.d0))
 
         call writeimage(real(array_u),int(2*nvel+1),int(2*im_pix+1),file_U,real(nu0_all(i)),&
-& real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(ang_scale),real(1.d0*(im_pix+1)),real(-1.d0*ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
 & real(0.d0),real(0.d0),real(0.d0))
 
         call writeimage(real(array_tau),int(2*nvel+1),int(2*im_pix+1),file_TAU,real(nu0_all(i)),&
-& real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+& real(ang_scale),real(1.d0*(im_pix+1)),real(-1.d0*ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
 & real(0.d0),real(0.d0),real(0.d0))
       else
         do k3 = 1,2*nvel+1
@@ -592,19 +600,19 @@ else
         file_TAU = trim(output_map) // trim(file_TAU)
 
         call writeimage(real(array_i(:,:,nvel+1)),int(1),int(2*im_pix+1),file_I,real(nu0_all(i)),&
-&real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+&real(ang_scale),real(1.d0*(im_pix+1)),real(-1.d0*ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
 & real(0.d0),real(0.d0),real(0.d0))
 
         call writeimage(real(array_q(:,:,nvel+1)),int(1),int(2*im_pix+1),file_Q,real(nu0_all(i)),&
-&real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+&real(ang_scale),real(1.d0*(im_pix+1)),real(-1.d0*ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
 & real(0.d0),real(0.d0),real(0.d0))
 
         call writeimage(real(array_u(:,:,nvel+1)),int(1),int(2*im_pix+1),file_U,real(nu0_all(i)),&
-&real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+&real(ang_scale),real(1.d0*(im_pix+1)),real(-1.d0*ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
 & real(0.d0),real(0.d0),real(0.d0))
 
         call writeimage(real(array_tau(:,:,nvel+1)),int(1),int(2*im_pix+1),file_TAU,real(nu0_all(i)),&
-&real(ang_scale),real(1.d0*(im_pix+1)),real(ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
+&real(ang_scale),real(1.d0*(im_pix+1)),real(-1.d0*ang_scale),real(1.d0*(im_pix+1)),real(dvel),real(1.d0*(nvel+1)),&
 & real(0.d0),real(0.d0),real(0.d0))
       else
   

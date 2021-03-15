@@ -497,8 +497,9 @@ chi(:) = chi(:) / norm2(chi)
 !chi = \    ---- alpha = -45
 
 alpha = dacos(chi(2))
-if (chi(1).lt.0.d0) alpha = -alpha
+if (chi(1).gt.0.d0) alpha = -alpha              !3 March 2021 -- lt -> gt
 
+!L&L06 ... Eq. (1.45)
 Qnode = Q * dcos(2.d0*alpha) + U * dsin(2.d0*alpha)
 Unode = U * dcos(2.d0*alpha) - Q * dsin(2.d0*alpha)
 
@@ -541,8 +542,9 @@ chi(:) = chi(:) / norm2(chi)
 !chi = \    ---- alpha = -45
 
 alpha = dacos(chi(2))
-if (chi(1).lt.0) alpha = -alpha
+if (chi(1).gt.0.d0) alpha = -alpha              !3 March 2021 -- lt -> gt
 
+!L&L06 ... Eq. (1.45)
 Qnode = Q * dcos(2.d0*alpha) - U * dsin(2.d0*alpha)
 Unode = U * dcos(2.d0*alpha) + Q * dsin(2.d0*alpha)
 

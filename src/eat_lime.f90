@@ -248,7 +248,7 @@ end do
 !composed only from the turbulent motion as of yet.
 
 do j = 1,node_num
-  b_therm = 2.d0 * 8.314462d0 * temp_all(1,j) / mass_mol
+  b_therm = 2.d0 * 8314.462d0 * temp_all(1,j) / mass_mol
 !we use gas-constant because mass_mol is given in Daltons
 
   b_all(j) = dsqrt(b_all(j)**2.d0 + b_therm)    

@@ -10,6 +10,7 @@ implicit none
 character(len=100) :: input_file,output_map
 character(len=100) :: c_pol_pops,c_spont_rates,c_rad_rates,c_col_rates,c_anis 
 character(len=100) :: in_pop,in_grid,in_mol,in_dust 
+character(len=100) :: c_mag
 
 integer node_num,del_num,e_num,r_num,c_num,c_temp
 integer i,j,k,i1,maxne,node,node_count,nth,nph,g1,g2,n_trans
@@ -154,6 +155,19 @@ else
 endif
 !write(*,*)bvec_all(:,1)
 
+if (extra_info.eq.1) then
+  write(c_mag,fmt="(A)")"/mag_field.dat"
+  c_mag = trim(output_map) // trim(c_mag)
+
+  open(unit=30,file=c_mag,recl=8824)
+  do node = 1,node_num
+    write(30,*)XYZ(:,node),bvec_all(:,node)
+  end do
+  close(30)
+endif
+
+!stop
+
 !canonical gauge direction to measure the angle phi to
 call random_number(gvec(1))
 call random_number(gvec(2))
@@ -196,26 +210,10 @@ pol_rates(:,:,:)=0.d0
 !$OMP PARALLEL DO
 do node = 1,bulk_node_num
   call fwig_temp_init(2*100)
-
-!  call cpu_time(start)
-! if statement only works if star is in the center
-  if (star_mod.eq.0) then
-    call trace_node(&
-    &node,node_num,&
-    &XYZ,bvec_all(:,node),gvec,&
-    &del_ne,del_num_ne,maxne,nvel,&
-    &nth,nph,xth,n_sphere,&
-    &dx,tx,&
-    &r_num,r_trans,c_num,c_temp,c_par,c_trans,col_temps,n_trans,all_trans,e_levs,&
-    &nu,e_num,lev_p,lev_g,b_all,vel_all,&
-    &t_Aji,t_Bij,dust_p,kd_v,t_Cji,h2_dens,temp_all,&
-    &j_lev,kmax,n_depth,&
-    &c_dim,count_array,&
-    &star_mod,R_star,T_star,XYZ_star,&
-    &verbose_mode,extra_info,&
-    &pol_pops(node,:),pol_rates(node,:,:),JJ_20(node,:))
-  else
-    if (norm2(XYZ(:,node)).gt.R_star) then
+  if (ab_all(node).gt.0.d0) then
+  !  call cpu_time(start)
+  ! if statement only works if star is in the center
+    if (star_mod.eq.0) then
       call trace_node(&
       &node,node_num,&
       &XYZ,bvec_all(:,node),gvec,&
@@ -230,6 +228,23 @@ do node = 1,bulk_node_num
       &star_mod,R_star,T_star,XYZ_star,&
       &verbose_mode,extra_info,&
       &pol_pops(node,:),pol_rates(node,:,:),JJ_20(node,:))
+    else
+      if (norm2(XYZ(:,node)).gt.R_star) then
+        call trace_node(&
+        &node,node_num,&
+        &XYZ,bvec_all(:,node),gvec,&
+        &del_ne,del_num_ne,maxne,nvel,&
+        &nth,nph,xth,n_sphere,&
+        &dx,tx,&
+        &r_num,r_trans,c_num,c_temp,c_par,c_trans,col_temps,n_trans,all_trans,e_levs,&
+        &nu,e_num,lev_p,lev_g,b_all,vel_all,&
+        &t_Aji,t_Bij,dust_p,kd_v,t_Cji,h2_dens,temp_all,&
+        &j_lev,kmax,n_depth,&
+        &c_dim,count_array,&
+        &star_mod,R_star,T_star,XYZ_star,&
+        &verbose_mode,extra_info,&
+        &pol_pops(node,:),pol_rates(node,:,:),JJ_20(node,:))
+      endif
     endif
   endif
 !  write(*,*)pol_pops(node,1:10)
